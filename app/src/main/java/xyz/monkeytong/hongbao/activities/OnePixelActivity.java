@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.PowerManager;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.view.Gravity;
 import android.view.Window;
@@ -16,7 +18,7 @@ import android.view.WindowManager;
  * Author: wangxiaojie6
  * Date: 2019/1/28
  */
-public class OnePixelActivity extends Activity {
+public class OnePixelActivity extends AppCompatActivity {
 
     private BroadcastReceiver endReceiver;
 
@@ -60,7 +62,7 @@ public class OnePixelActivity extends Activity {
     private void checkScreen() {
 
         PowerManager pm = (PowerManager) OnePixelActivity.this.getSystemService(Context.POWER_SERVICE);
-        boolean isScreenOn = pm.isScreenOn();
+        boolean isScreenOn = pm != null && pm.isInteractive();
         if (isScreenOn) {
             finish();
         }

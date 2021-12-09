@@ -1,14 +1,14 @@
  apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 31
 
     defaultConfig {
         applicationId "xyz.monkeytong.hongbao"
-        minSdkVersion 19
-        targetSdkVersion 29
-        versionCode 7000000
-        versionName "v7.0.0"
+        minSdkVersion 21
+        targetSdkVersion 31
+        versionCode 8000000
+        versionName "v8.0.0"
     }
 
     signingConfigs {
@@ -32,5 +32,5 @@ android {
  dependencies {
      implementation fileTree(include: ['*.jar'], dir: 'libs')
      implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.0.0"
-     implementation 'androidx.appcompat:appcompat:1.1.0'
+     implementation 'androidx.appcompat:appcompat:1.4.0'
  }

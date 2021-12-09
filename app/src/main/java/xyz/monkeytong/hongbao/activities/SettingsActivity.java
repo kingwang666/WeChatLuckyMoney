@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentActivity;
 import android.view.View;
 import android.view.Window;
@@ -22,13 +24,11 @@ import xyz.monkeytong.hongbao.fragments.GeneralSettingsFragment;
  * Created by Zhongyi on 1/19/16.
  * Settings page.
  */
-public class SettingsActivity extends FragmentActivity {
+public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_preferences);
-
-        loadUI();
         prepareSettings();
     }
 
@@ -55,19 +55,6 @@ public class SettingsActivity extends FragmentActivity {
             fragmentTransaction.replace(R.id.preferences_fragment, new CommentSettingsFragment());
         }
         fragmentTransaction.commit();
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void loadUI() {
-        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return;
-
-        Window window = this.getWindow();
-
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-
-        window.setStatusBarColor(0xffE46C62);
     }
 
     @Override
