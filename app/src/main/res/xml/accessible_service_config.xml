@@ -6,6 +6,6 @@
     android:canPerformGestures="true"
     android:canRetrieveWindowContent="true"
     android:description="@string/app_description"
-    android:notificationTimeout="0"
+    android:notificationTimeout="10"
     android:packageNames="com.tencent.mm"
     android:settingsActivity="xyz.monkeytong.hongbao.activities.SettingsActivity" />
