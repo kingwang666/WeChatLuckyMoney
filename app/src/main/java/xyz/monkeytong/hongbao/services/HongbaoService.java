@@ -23,11 +23,10 @@ import xyz.monkeytong.hongbao.utils.PowerUtil;
 
 public class HongbaoService extends AccessibilityService implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = "HongbaoService";
-    private static final String WECHAT_DETAILS_EN = "Details";
+
     private static final String WECHAT_DETAILS_CH = "红包详情";
     private static final String WECHAT_DETAILS_2_CH = "红包记录";
     private static final String WECHAT_OPENED = "已存入零钱";
-    private static final String WECHAT_BETTER_LUCK_EN = "Better luck next time!";
     private static final String WECHAT_BETTER_LUCK_CH = "手慢了";
     private static final String WECHAT_BETTER_LUCK_2_CH = "手慢了，红包派完了";
     private static final String WECHAT_BETTER_LUCK_3_CH = "看看大家的手气";
@@ -40,7 +39,6 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private static final String WECHAT_LUCKMONEY_RECEIVE_ACTIVITY = ".plugin.luckymoney.ui";//com.tencent.mm/.plugin.luckymoney.ui.En_fba4b94f  com.tencent.mm/com.tencent.mm.plugin.luckymoney.ui.LuckyMoneyReceiveUI
     private static final String WECHAT_LUCKMONEY_RECEIVE_UI_ACTIVITY = "LuckyMoneyReceiveUI";
     private static final String WECHAT_LUCKMONEY_NOT_HOOK_RECEIVE_UI_ACTIVITY = "LuckyMoneyNotHookReceiveUI";
-    private static final String WECHAT_LUCKMONEY_BEFORE_DETAIL_ACTIVITY = "LuckyMoneyBeforeDetailUI";
     private static final String WECHAT_LUCKMONEY_DETAIL_ACTIVITY = "LuckyMoneyDetailUI";
     private static final String WECHAT_LUCKMONEY_GENERAL_ACTIVITY = "LauncherUI";
     private static final String WECHAT_LUCKMONEY_CHATTING_ACTIVITY = "ChattingUI";
@@ -51,7 +49,11 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private int mUnpackCount = 0;
     private boolean mMutex = false, mListMutex = false, mChatMutex = false, mOpened = false;
     private boolean mRedPackOpening = false;
-    private int mLastWindowId;
+    private int mCurrentChatWindowsId;
+    private int mCurrentReceiveWindowId;
+    private int mCurrentDetailWindowId;
+
+    private boolean mForceCheckWindow;
 
     private Pattern mGroupChat = Pattern.compile("\\(\\d+?\\)");
 
@@ -75,13 +77,12 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
 
-
         setCurrentActivityName(event);
-        if (!isInReceiveActivity()) {
+        if (!isInReceiveActivity() || getActiveWindowId(event) == mCurrentChatWindowsId) {
             mRedPackOpening = false;
             getHandler().removeCallbacks(mOpenPackCallback);
         }
-        Log.d(TAG, "time: " + event.getEventTime() + "  type: " + event.getEventType() + " content type: " + event.getContentChangeTypes());
+        Log.d(TAG, "class: " + event.getClassName() + "  type: " + event.getEventType() + " content type: " + event.getContentChangeTypes());
 
         if (sharedPreferences == null) return;
         if (!mMutex) {
@@ -176,7 +177,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         String currentActivityName = getCurrentActivityName();
         boolean hasNodes = this.hasOneOfThoseNodes(rootNodeInfo, WECHAT_OPENED,
                 WECHAT_BETTER_LUCK_CH, WECHAT_BETTER_LUCK_2_CH, WECHAT_BETTER_LUCK_3_CH,
-                WECHAT_DETAILS_CH, WECHAT_DETAILS_2_CH, WECHAT_BETTER_LUCK_EN, WECHAT_DETAILS_EN, WECHAT_EXPIRES_CH, WECHAT_EXPIRES_2_CH);
+                WECHAT_DETAILS_CH, WECHAT_DETAILS_2_CH, WECHAT_EXPIRES_CH, WECHAT_EXPIRES_2_CH);
         if (hasNodes) {
             clickBackIfNeed();
             resetUnpackState();
@@ -189,7 +190,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             /* 戳开红包，红包还没抢完，遍历节点匹配“拆红包” */
             AccessibilityNodeInfo unpackNode = findOpenButton(rootNodeInfo);
             Log.d(TAG, "node2 " + unpackNode);
-            if (unpackNode != null  && currentActivityName.contains(WECHAT_LUCKMONEY_RECEIVE_ACTIVITY)) {
+            if (unpackNode != null && currentActivityName.contains(WECHAT_LUCKMONEY_RECEIVE_ACTIVITY)) {
                 mUnpackNode = unpackNode;
                 mUnpackCount += 1;
                 getHandler().removeCallbacks(mOpenPackCallback);
@@ -209,7 +210,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private void setCurrentActivityName(AccessibilityEvent event) {
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || event.getEventType() == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             try {
                 ComponentName componentName = new ComponentName(
                         event.getPackageName().toString(),
@@ -217,11 +218,67 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
                 );
                 getPackageManager().getActivityInfo(componentName, 0);
                 currentActivityName = componentName.flattenToShortString();
+                mForceCheckWindow = false;
+                int currentWindowId = event.getWindowId();
+                if (isInChatActivity(false)) {
+                    mCurrentChatWindowsId = currentWindowId;
+                } else if (isInReceiveActivity(false)) {
+                    mCurrentReceiveWindowId = currentWindowId;
+                } else if (isInDetailActivity(false)) {
+                    mCurrentDetailWindowId = currentWindowId;
+                }
             } catch (PackageManager.NameNotFoundException e) {
-                Log.e(TAG, "", e);
+                int currentWindowId = getActiveWindowId(event);
+                Log.e(TAG, currentWindowId + " ", e);
+                if (!checkCurrentActivityName(currentWindowId)){
+                    mForceCheckWindow = true;
+                }
             }
             Log.d(TAG, "CurrentActivity: " + currentActivityName);
+        } else if (mForceCheckWindow) {
+            checkCurrentActivityName();
         }
+    }
+
+    private int getActiveWindowId(AccessibilityEvent event){
+        AccessibilityNodeInfo info = getRootInActiveWindow();
+        if (info != null){
+            return info.getWindowId();
+        }
+        if (event != null && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && event.getContentChangeTypes() == AccessibilityEvent.CONTENT_CHANGE_TYPE_PANE_APPEARED){
+            return event.getWindowId();
+        }
+        return -1;
+    }
+
+    private boolean checkCurrentActivityName() {
+        AccessibilityNodeInfo info = getRootInActiveWindow();
+        if (info == null) {
+            return false;
+        }
+        return checkCurrentActivityName(info.getWindowId());
+    }
+
+    private boolean checkCurrentActivityName(int windowId) {
+        if (windowId == -1){
+            return false;
+        }
+        if (windowId == mCurrentChatWindowsId) {
+            currentActivityName = WECHAT_LUCKMONEY_GENERAL_ACTIVITY;
+            mForceCheckWindow = false;
+            return true;
+        }
+        if (windowId == mCurrentReceiveWindowId) {
+            currentActivityName = WECHAT_LUCKMONEY_RECEIVE_ACTIVITY + "." + WECHAT_LUCKMONEY_NOT_HOOK_RECEIVE_UI_ACTIVITY;
+            mForceCheckWindow = false;
+            return true;
+        }
+        if (windowId == mCurrentDetailWindowId) {
+            currentActivityName = WECHAT_LUCKMONEY_RECEIVE_ACTIVITY + "." + WECHAT_LUCKMONEY_DETAIL_ACTIVITY;
+            mForceCheckWindow = false;
+            return true;
+        }
+        return false;
     }
 
     private String getCurrentActivityName() {
@@ -230,15 +287,28 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
 
     private boolean isLuckyMoney() {
+        if (getActiveWindowId(null) == mCurrentChatWindowsId){
+            return false;
+        }
         return getCurrentActivityName().contains(WECHAT_LUCKMONEY_RECEIVE_ACTIVITY);
     }
 
     private boolean isInChatActivity() {
+        return isInChatActivity(true);
+    }
+
+    private boolean isInChatActivity(boolean checkId) {
+        if (checkId && getActiveWindowId(null) != mCurrentChatWindowsId){
+            return false;
+        }
         String currentActivityName = getCurrentActivityName();
         return currentActivityName.contains(WECHAT_LUCKMONEY_CHATTING_ACTIVITY) || currentActivityName.contains(WECHAT_LUCKMONEY_GENERAL_ACTIVITY);
     }
 
     private boolean isGroupChat(AccessibilityNodeInfo rootNodeInfo) {
+        if (getActiveWindowId(null) != mCurrentChatWindowsId){
+            return false;
+        }
         List<AccessibilityNodeInfo> nodeInfos = rootNodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/ipt");
         if (nodeInfos == null || nodeInfos.isEmpty()) {
             return true;
@@ -256,11 +326,25 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private boolean isInReceiveActivity() {
+        return isInReceiveActivity(true);
+    }
+
+    private boolean isInReceiveActivity(boolean checkId) {
+        if (checkId && getActiveWindowId(null) == mCurrentChatWindowsId){
+            return false;
+        }
         String currentActivityName = getCurrentActivityName();
         return isLuckyMoney() && (currentActivityName.contains(WECHAT_LUCKMONEY_RECEIVE_UI_ACTIVITY) || currentActivityName.contains(WECHAT_LUCKMONEY_NOT_HOOK_RECEIVE_UI_ACTIVITY));
     }
 
     private boolean isInDetailActivity() {
+        return isInDetailActivity(true);
+    }
+
+    private boolean isInDetailActivity(boolean checkId) {
+        if (checkId && getActiveWindowId(null) == mCurrentChatWindowsId){
+            return false;
+        }
         String currentActivityName = getCurrentActivityName();
         return isLuckyMoney() && (currentActivityName.contains(WECHAT_LUCKMONEY_DETAIL_ACTIVITY));
     }
@@ -297,8 +381,9 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private AccessibilityNodeInfo findOpenButton(AccessibilityNodeInfo node) {
-        if (node == null && mRedPackOpening)
+        if (node == null || node.getWindowId() == mCurrentChatWindowsId || node.getWindowId() == mCurrentDetailWindowId || mRedPackOpening){
             return null;
+        }
 
         List<AccessibilityNodeInfo> buttons = node.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/f4f");
         if (buttons != null && buttons.size() == 1) {
@@ -320,7 +405,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         //layout元素，遍历找button
         AccessibilityNodeInfo button;
         for (int i = 0; i < node.getChildCount(); i++) {
-            if (mRedPackOpening) {
+            if (node.getWindowId() == mCurrentChatWindowsId || node.getWindowId() == mCurrentDetailWindowId || mRedPackOpening) {
                 break;
             }
             button = findOpenButton(node.getChild(i));
@@ -399,10 +484,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             mUnpackCount += 1;
             return;
         }
-        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            clickBackIfNeed();
-        }
-
+        clickBackIfNeed();
     }
 
     private void clickBackIfNeed() {
@@ -412,7 +494,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         /* 戳开红包，红包已被抢完，遍历节点匹配“红包详情”和“手慢了” */
         boolean hasNodes = hasOneOfThoseNodes(rootNodeInfo, WECHAT_OPENED,
                 WECHAT_BETTER_LUCK_CH, WECHAT_BETTER_LUCK_2_CH, WECHAT_DETAILS_CH, WECHAT_DETAILS_2_CH, WECHAT_BETTER_LUCK_3_CH,
-                WECHAT_BETTER_LUCK_EN, WECHAT_DETAILS_EN, WECHAT_EXPIRES_CH, WECHAT_EXPIRES_2_CH);
+                WECHAT_EXPIRES_CH, WECHAT_EXPIRES_2_CH);
         Log.d(TAG, "checkNodeInfo  hasNodes:" + hasNodes + " opened: " + mOpened + " mMutex:" + mMutex + " name: " + currentActivityName);
         if ((isInDetailActivity() || isInReceiveActivity()) && hasNodes) {
             mMutex = false;

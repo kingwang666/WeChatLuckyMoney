@@ -12,19 +12,19 @@ android {
     }
 
     signingConfigs {
-        release {
-            keyAlias 'key'
-            keyPassword 'wxj19931028'
-            storeFile file('D:/project/demo/key.jks')
-            storePassword 'wxj19931028'
-        }
+//        release {
+//            keyAlias 'key'
+//            keyPassword 'wxj19931028'
+//            storeFile file('D:/project/demo/key.jks')
+//            storePassword 'wxj19931028'
+//        }
     }
 
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+//            signingConfig signingConfigs.release
         }
     }
 }
