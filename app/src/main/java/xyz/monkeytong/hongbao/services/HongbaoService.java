@@ -55,14 +55,14 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     private boolean mForceCheckWindow;
 
-    private Pattern mGroupChat = Pattern.compile("\\(\\d+?\\)");
+    private final Pattern mGroupChat = Pattern.compile("\\(\\d+?\\)");
 
     private PowerUtil powerUtil;
     private SharedPreferences sharedPreferences;
 
     private Handler mHandler;
 
-    private Runnable mOpenPackCallback = new Runnable() {
+    private final Runnable mOpenPackCallback = new Runnable() {
         @Override
         public void run() {
             openPackIfNeed();

@@ -32,12 +32,11 @@
             android:textSize="28sp" />
 
         <TextView
-            android:id="@+id/textView5"
+            android:id="@+id/version_tv"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:gravity="center_vertical|center_horizontal"
-            android:text="@string/app_version"
             android:textColor="#fff" />
     </LinearLayout>
 
@@ -63,12 +62,12 @@
 
         <LinearLayout
             android:id="@+id/layout_control_community"
-            android:gravity="center"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_marginEnd="5dp"
             android:layout_weight="0.35"
             android:background="?attr/selectableItemBackground"
+            android:gravity="center"
             android:onClick="openGitHub"
             android:orientation="vertical"
             android:textColor="#858585"
@@ -95,13 +94,13 @@
 
         <LinearLayout
             android:id="@+id/layout_control_accessibility"
-            android:gravity="center"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:layout_weight="0.3"
             android:background="?attr/selectableItemBackground"
+            android:gravity="center"
             android:onClick="openAccessibility"
             android:orientation="vertical"
             android:textColor="#858585"
@@ -131,10 +130,10 @@
             android:id="@+id/layout_control_settings"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:gravity="center"
             android:layout_marginStart="5dp"
             android:layout_weight="0.35"
             android:background="?attr/selectableItemBackground"
+            android:gravity="center"
             android:onClick="openSettings"
             android:orientation="vertical"
             android:textColor="#858585"
@@ -171,18 +170,18 @@
         android:layout_marginRight="12dp"
         android:layout_marginBottom="8dp"
         android:background="#ffffff"
-        android:weightSum="2"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:weightSum="2">
 
         <LinearLayout
             android:id="@+id/layout_notification_launch"
-            android:gravity="center"
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
+            android:gravity="center"
             android:onClick="launchNotificationService"
             android:orientation="vertical"
             android:textColor="#858585"
@@ -210,13 +209,13 @@
 
         <LinearLayout
             android:id="@+id/layout_snooze_notification"
-            android:gravity="center"
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackground"
+            android:gravity="center"
             android:onClick="snoozeNotificationService"
             android:orientation="vertical"
             android:textColor="#858585"

@@ -26,6 +26,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.util.List;
 
+import xyz.monkeytong.hongbao.BuildConfig;
 import xyz.monkeytong.hongbao.HBApplication;
 import xyz.monkeytong.hongbao.R;
 import xyz.monkeytong.hongbao.services.HongbaoNotificationService;
@@ -50,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
     private AccessibilityManager accessibilityManager;
     private OnePixelReceiver mReceiver;
 
+    private UpdateTask mUpdateTask;
+
     private final BroadcastReceiver mStateListener = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -72,6 +75,8 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
         snoozeView = findViewById(R.id.layout_snooze_notification);
         notifitionSnoozeText = findViewById(R.id.layout_snooze_notification_text);
         notifitionSnoozeIcon = findViewById(R.id.layout_snooze_notification_icon);
+
+        ((TextView)findViewById(R.id.version_tv)).setText(BuildConfig.VERSION_NAME);
 
         explicitlyLoadPreferences();
 
@@ -117,15 +122,11 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
                 //这种方案适用于 API 26, 即8.0（含8.0）以上可以用
                 intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
                 intent.putExtra(Settings.EXTRA_CHANNEL_ID, getApplicationInfo().uid);
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            } else {
                 intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
                 //这种方案适用于 API21——25，即 5.0——7.1 之间的版本可以使用
                 intent.putExtra("app_package", getPackageName());
                 intent.putExtra("app_uid", getApplicationInfo().uid);
-            } else {
-                intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                Uri uri = Uri.fromParts("package", getPackageName(), null);
-                intent.setData(uri);
             }
             startActivity(intent);
         } catch (Exception e) {
@@ -157,8 +158,10 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
         updateHongbaoServiceStatus();
         updateNoticeService();
         // Check for update when WIFI is connected or on first time.
-        if (ConnectivityUtil.isWifi(this) || UpdateTask.count == 0)
-            new UpdateTask(this, false).update();
+        if (ConnectivityUtil.isWifi(this) && !UpdateTask.sHomeRequest) {
+            mUpdateTask = new UpdateTask(this, false);
+            mUpdateTask.update();
+        }
     }
 
     @Override
@@ -170,31 +173,6 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
         if (!moveTaskToBack(false)) {
             super.onBackPressed();
         }
-    }
-
-    @Override
-    protected void onStop() {
-        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
-        localBroadcastManager.unregisterReceiver(mStateListener);
-        if (isFinishing()) {
-            String listeners = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
-            if (listeners != null && listeners.contains(HBApplication.LISTENER_PATH)) {
-                Toast.makeText(this, "通知监听服务运行中，请关闭", Toast.LENGTH_SHORT).show();
-            }
-        }
-        super.onStop();
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        //移除监听服务
-        accessibilityManager.removeAccessibilityStateChangeListener(this);
-        if (mReceiver != null) {
-            unregisterReceiver(mReceiver);
-            mReceiver = null;
-        }
-        super.onDestroy();
     }
 
     public void openAccessibility(View view) {
@@ -241,8 +219,6 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
 
     public void openSettings(View view) {
         Intent settingsIntent = new Intent(this, SettingsActivity.class);
-        settingsIntent.putExtra("title", getString(R.string.preference));
-        settingsIntent.putExtra("frag_id", "GeneralSettingsFragment");
         startActivity(settingsIntent);
     }
 
@@ -312,8 +288,36 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
         return false;
     }
 
+    @Override
+    protected void onStop() {
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        localBroadcastManager.unregisterReceiver(mStateListener);
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        String listeners = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
+        if (listeners != null && listeners.contains(HBApplication.LISTENER_PATH)) {
+            Toast.makeText(this, "通知监听服务运行中，请关闭", Toast.LENGTH_SHORT).show();
+        }
+        //移除监听服务
+        accessibilityManager.removeAccessibilityStateChangeListener(this);
+        if (mReceiver != null) {
+            unregisterReceiver(mReceiver);
+            mReceiver = null;
+        }
+        if (mUpdateTask != null){
+            mUpdateTask.cancel(true);
+            mUpdateTask = null;
+        }
+        super.onDestroy();
+    }
+
 
     private static class OnePixelReceiver extends BroadcastReceiver {
+
+
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {    //屏幕关闭启动1像素Activity
@@ -321,7 +325,7 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
                 it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(it);
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {   //屏幕打开 结束1像素
-                LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent("finish"));
+                LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(OnePixelActivity.ACTION_FINISH));
             }
         }
     }

@@ -27,8 +27,7 @@
             android:key="pref_watch_chat"
             android:layout="@layout/preference_checkbox"
             android:title="@string/auto_open_packets" />
-        <xyz.monkeytong.hongbao.activities.SeekBarPreference
-            pref_kind="pref_open_delay"
+        <xyz.monkeytong.hongbao.preferences.SeekBarDialogPreference
             android:key="pref_open_delay"
             android:layout="@layout/preference_checkbox"
             android:title="@string/open_with_delay" />
@@ -42,11 +41,6 @@
             android:key="pref_open_after_back"
             android:layout="@layout/preference_checkbox"
             android:title="@string/open_after_back" />
-        <EditTextPreference
-            android:key="pref_watch_exclude_words"
-            android:layout="@layout/preference_checkbox"
-            android:summary="@string/pref_watch_exclude_words_summary"
-            android:title="@string/skip_phrases" />
 
         <CheckBoxPreference
             android:defaultValue="false"
@@ -76,14 +70,4 @@
             android:summary="@string/help_hint"
             android:title="@string/help_and_feedback" />
     </PreferenceCategory>
-    <!--    <PreferenceCategory-->
-    <!--            android:title="@string/labs"-->
-    <!--            android:layout="@layout/preference_category">-->
-    <!--        <CheckBoxPreference-->
-    <!--                android:key="pref_keep_screen_on"-->
-    <!--                android:title="@string/keep_screen_on"-->
-    <!--                android:summary="@string/keep_screen_on_hint"-->
-    <!--                android:layout="@layout/preference_checkbox"-->
-    <!--                android:defaultValue="false"/>-->
-    <!--    </PreferenceCategory>-->
 </PreferenceScreen>

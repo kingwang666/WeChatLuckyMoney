@@ -2,9 +2,11 @@ package xyz.monkeytong.hongbao.fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
+
+import androidx.fragment.app.Fragment;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+
 import xyz.monkeytong.hongbao.R;
 import xyz.monkeytong.hongbao.activities.WebViewActivity;
 import xyz.monkeytong.hongbao.utils.SettingUtils;
@@ -13,10 +15,10 @@ import xyz.monkeytong.hongbao.utils.UpdateTask;
 /**
  * Created by Zhongyi on 2/4/16.
  */
-public class GeneralSettingsFragment extends PreferenceFragment {
+public class GeneralSettingsFragment extends PreferenceFragmentCompat {
+
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.general_preferences);
         setPrefListeners();
     }
@@ -36,7 +38,7 @@ public class GeneralSettingsFragment extends PreferenceFragment {
         Preference updatePref = findPreference("pref_etc_check_update");
         updatePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             public boolean onPreferenceClick(Preference preference) {
-                new UpdateTask(getActivity().getApplicationContext(), true).update();
+                new UpdateTask(getActivity(), true).update();
                 return false;
             }
         });
@@ -53,23 +55,13 @@ public class GeneralSettingsFragment extends PreferenceFragment {
                 return false;
             }
         });
+    }
 
-        Preference excludeWordsPref = findPreference("pref_watch_exclude_words");
-        String summary = getResources().getString(R.string.pref_watch_exclude_words_summary);
-        String value = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString("pref_watch_exclude_words", "");
-        if (value.length() > 0) excludeWordsPref.setSummary(summary + ":" + value);
-
-        excludeWordsPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object o) {
-                String summary = getResources().getString(R.string.pref_watch_exclude_words_summary);
-                if (o != null && o.toString().length() > 0) {
-                    preference.setSummary(summary + ":" + o.toString());
-                } else {
-                    preference.setSummary(summary);
-                }
-                return true;
-            }
-        });
+    @Override
+    public void onDisplayPreferenceDialog(Preference preference) {
+        if (preference instanceof OnPreferenceDisplayDialogCallback && ((OnPreferenceDisplayDialogCallback) preference).onPreferenceDisplayDialog(this, preference)) {
+            return;
+        }
+        super.onDisplayPreferenceDialog(preference);
     }
 }

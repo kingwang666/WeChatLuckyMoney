@@ -1,27 +1,19 @@
 package xyz.monkeytong.hongbao.activities;
 
-import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import xyz.monkeytong.hongbao.R;
-import xyz.monkeytong.hongbao.utils.DownloadUtil;
 
 /**
  * Created by Zhongyi on 1/19/16.
@@ -41,10 +33,10 @@ public class WebViewActivity extends AppCompatActivity {
             webViewTitle = bundle.getString("title");
             webViewUrl = bundle.getString("url");
 
-            final TextView webViewBar = (TextView) findViewById(R.id.webview_bar);
+            final TextView webViewBar = findViewById(R.id.webview_bar);
             webViewBar.setText(webViewTitle);
 
-            webView = (WebView) findViewById(R.id.webView);
+            webView = findViewById(R.id.webView);
             webView.getSettings().setBuiltInZoomControls(false);
             webView.getSettings().setJavaScriptEnabled(true);
             webView.getSettings().setDomStorageEnabled(true);
@@ -52,18 +44,7 @@ public class WebViewActivity extends AppCompatActivity {
             webView.setWebViewClient(new WebViewClient() {
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    if (url.contains("apk")) {
-                        Toast.makeText(getApplicationContext(), getString(R.string.download_backend), Toast.LENGTH_SHORT).show();
-                        (new DownloadUtil()).enqueue(url, getApplicationContext());
-                        return true;
-                    } else if (!url.contains("http")) {
-                        Toast.makeText(getApplicationContext(), getString(R.string.download_redirect), Toast.LENGTH_LONG).show();
-                        webViewBar.setText(getString(R.string.download_hint));
-                        return false;
-                    } else {
-                        view.loadUrl(url);
-                        return false;
-                    }
+                    return false;
                 }
 
                 @Override
@@ -73,21 +54,6 @@ public class WebViewActivity extends AppCompatActivity {
             });
             webView.loadUrl(webViewUrl);
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
     }
 
 

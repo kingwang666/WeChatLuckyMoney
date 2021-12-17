@@ -20,6 +20,8 @@ import android.view.WindowManager;
  */
 public class OnePixelActivity extends AppCompatActivity {
 
+    public final static String ACTION_FINISH = "xyz.monkeytong.hongbao.ONE_PIXEL_FINISH";
+
     private BroadcastReceiver endReceiver;
 
     @Override
@@ -43,7 +45,7 @@ public class OnePixelActivity extends AppCompatActivity {
                     finish();
                 }
             };
-            LocalBroadcastManager.getInstance(this).registerReceiver(endReceiver, new IntentFilter("finish"));
+            LocalBroadcastManager.getInstance(this).registerReceiver(endReceiver, new IntentFilter(ACTION_FINISH));
 
         }
         //检查屏幕状态

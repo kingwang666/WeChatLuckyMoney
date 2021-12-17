@@ -1,23 +1,21 @@
 package xyz.monkeytong.hongbao.activities;
 
-import android.annotation.TargetApi;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import xyz.monkeytong.hongbao.R;
-import xyz.monkeytong.hongbao.fragments.CommentSettingsFragment;
 import xyz.monkeytong.hongbao.fragments.GeneralSettingsFragment;
 
 /**
@@ -33,27 +31,13 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void prepareSettings() {
-        String title, fragId;
-        Bundle bundle = getIntent().getExtras();
-        if (bundle != null) {
-            title = bundle.getString("title");
-            fragId = bundle.getString("frag_id");
-        } else {
-            title = getString(R.string.preference);
-            fragId = "GeneralSettingsFragment";
-        }
 
-        TextView textView = (TextView) findViewById(R.id.settings_bar);
-        textView.setText(title);
+        TextView textView = findViewById(R.id.settings_bar);
+        textView.setText(R.string.preference);
 
-        FragmentManager fragmentManager = getFragmentManager();
+        FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-        if ("GeneralSettingsFragment".equals(fragId)) {
-            fragmentTransaction.replace(R.id.preferences_fragment, new GeneralSettingsFragment());
-        } else if ("CommentSettingsFragment".equals(fragId)) {
-            fragmentTransaction.replace(R.id.preferences_fragment, new CommentSettingsFragment());
-        }
+        fragmentTransaction.replace(R.id.preferences_fragment, new GeneralSettingsFragment());
         fragmentTransaction.commit();
     }
 
@@ -72,4 +56,5 @@ public class SettingsActivity extends AppCompatActivity {
                 new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
         startActivity(mAccessibleIntent);
     }
+
 }
