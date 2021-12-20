@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.service.notification.NotificationListenerService;
@@ -29,15 +30,11 @@ public class HongbaoNotificationService extends NotificationListenerService {
 
     private static final String PACKAGE_NAME = "com.tencent.mm";
 
-    // Message tags
-    private static final int MSG_NOTIFY = 1;
-    private static final int MSG_STARTUP = 2;
-    private static final int MSG_SNOOZE = 3;
-
     public static final String ACTION_STATE_CHANGE = "com.android.example.notificationlistener.STATE";
 
 
     private static boolean sConnected;
+    private static HongbaoNotificationService sService;
 
     public static boolean isConnected() {
         return sConnected;
@@ -46,9 +43,15 @@ public class HongbaoNotificationService extends NotificationListenerService {
     @RequiresApi(api = Build.VERSION_CODES.N)
     public static void toggleSnooze(Context context) {
         if (sConnected) {
-            Log.d(TAG, "scheduling snooze");
-            if (sHandler != null) {
-                sHandler.sendEmptyMessage(MSG_SNOOZE);
+            Log.d(TAG, "trying to snooze");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                try {
+                    if (sService != null) {
+                        sService.requestUnbind();
+                    }
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "failed to unbind service", e);
+                }
             }
         } else {
             Log.d(TAG, "trying to unsnooze");
@@ -58,46 +61,6 @@ public class HongbaoNotificationService extends NotificationListenerService {
                 Log.e(TAG, "failed to rebind service", e);
             }
         }
-    }
-
-    private static Handler sHandler;
-
-
-    @SuppressLint("HandlerLeak")
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        sHandler = new Handler() {
-            @Override
-            public void handleMessage(@NonNull Message msg) {
-                switch (msg.what) {
-                    case MSG_NOTIFY:
-                        StatusBarNotification sbn = (StatusBarNotification) msg.obj;
-                        if (PACKAGE_NAME.equals(sbn.getPackageName())){
-                            CharSequence ticker = sbn.getNotification().tickerText;
-                            if (ticker != null && ticker.toString().contains(HongbaoService.WECHAT_NOTIFICATION_TIP)){
-                                clickNotification(sbn);
-                            }
-                        }
-
-                        break;
-                    case MSG_STARTUP:
-                        sConnected = true;
-                        LocalBroadcastManager.getInstance(HongbaoNotificationService.this).sendBroadcast(new Intent(ACTION_STATE_CHANGE));
-                        break;
-                    case MSG_SNOOZE:
-                        Log.d(TAG, "trying to snooze");
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            try {
-                                requestUnbind();
-                            } catch (RuntimeException e) {
-                                Log.e(TAG, "failed to unbind service", e);
-                            }
-                        }
-                        break;
-                }
-            }
-        };
     }
 
     private void clickNotification(StatusBarNotification sbn) {
@@ -111,36 +74,50 @@ public class HongbaoNotificationService extends NotificationListenerService {
         if ((sbn.getNotification().flags & Notification.FLAG_AUTO_CANCEL) != 0) {
             cancelNotification(sbn.getKey());
         }
-
     }
 
-    @Override
-    public void onDestroy() {
-        sConnected = false;
-        LocalBroadcastManager.getInstance(HongbaoNotificationService.this)
-                .sendBroadcast(new Intent(ACTION_STATE_CHANGE));
-        sHandler = null;
-        super.onDestroy();
-    }
 
     @Override
     public void onListenerConnected() {
+        super.onListenerConnected();
         Log.w(TAG, "onListenerConnected: ");
-        Message.obtain(sHandler, MSG_STARTUP).sendToTarget();
+        sConnected = true;
+        sService = this;
+        LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_STATE_CHANGE));
+    }
+
+    @Override
+    public void onListenerDisconnected() {
+        super.onListenerDisconnected();
+        sConnected = false;
+        sService = null;
+        LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_STATE_CHANGE));
     }
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn, RankingMap rankingMap) {
+        super.onNotificationPosted(sbn, rankingMap);
         Log.w(TAG, "onNotificationPosted: " + sbn.getKey());
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        if (sharedPreferences != null && !sharedPreferences.getBoolean("pref_watch_notification", false)){
-            return;
+        if (PACKAGE_NAME.equals(sbn.getPackageName())) {
+            CharSequence ticker = sbn.getNotification().tickerText;
+            if (ticker != null && ticker.toString().contains(HongbaoService.WECHAT_NOTIFICATION_TIP)) {
+                clickNotification(sbn);
+            }
         }
-        Message.obtain(sHandler, MSG_NOTIFY, sbn).sendToTarget();
+
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn, RankingMap rankingMap) {
+        super.onNotificationRemoved(sbn, rankingMap);
         Log.w(TAG, "onNotificationRemoved: " + sbn.getKey());
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        sConnected = false;
+        sService = null;
+        LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_STATE_CHANGE));
     }
 }

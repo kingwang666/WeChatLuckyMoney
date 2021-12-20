@@ -31,7 +31,14 @@ public class SeekBarDialogPreference extends BaseDialogPreference {
      * @param value The current progress of the {@link SeekBar}
      */
     public void setValue(int value) {
-        setValueInternal(value);
+        final boolean wasBlocking = shouldDisableDependents();
+        mSeekBarValue = value;
+        persistInt(value);
+        final boolean isBlocking = shouldDisableDependents();
+        if (isBlocking != wasBlocking) {
+            notifyDependencyChange(isBlocking);
+        }
+        notifyChanged();
     }
 
     /**
@@ -43,11 +50,8 @@ public class SeekBarDialogPreference extends BaseDialogPreference {
         return mSeekBarValue;
     }
 
-    private void setValueInternal(int seekBarValue) {
-        if (seekBarValue != mSeekBarValue) {
-            mSeekBarValue = seekBarValue;
-            persistInt(seekBarValue);
-            notifyChanged();
-        }
+    @Override
+    public boolean shouldDisableDependents() {
+        return mSeekBarValue == 0 || super.shouldDisableDependents();
     }
 }

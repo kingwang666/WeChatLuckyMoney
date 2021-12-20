@@ -33,11 +33,8 @@
     <string name="help_and_feedback">帮助与反馈</string>
     <string name="help_hint">前往GitHub项目主页提交issue</string>
     <string name="checking_new_version">正在检查新版本……</string>
-    <string name="delay_instantly">立即</string>
-    <string name="delay_delay">延迟</string>
-    <string name="delay_open">拆开红包</string>
-    <string name="delay_sec">秒</string>
-    <string name="delay_then">然后</string>
+    <string name="delay_instantly">立即拆开红包</string>
+    <string name="delay_delay">延迟%d秒拆开红包</string>
     <string name="d">延迟0秒拆开红包</string>
     <string name="todo">TODO</string>
     <string name="interrupt">服务已中断</string>

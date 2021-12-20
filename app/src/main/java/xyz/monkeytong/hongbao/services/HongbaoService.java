@@ -55,10 +55,15 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     private boolean mForceCheckWindow;
 
+    private boolean mWatchList = false;
+    private boolean mWatchChat = true;
+    private boolean mOpenSelf = true;
+    private int mOpenDelay;
+    private boolean mBackAfterOpen = true;
+
     private final Pattern mGroupChat = Pattern.compile("\\(\\d+?\\)");
 
     private PowerUtil powerUtil;
-    private SharedPreferences sharedPreferences;
 
     private Handler mHandler;
 
@@ -84,23 +89,19 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         }
         Log.d(TAG, "class: " + event.getClassName() + "  type: " + event.getEventType() + " content type: " + event.getContentChangeTypes());
 
-        if (sharedPreferences == null) return;
         if (!mMutex) {
-            if (sharedPreferences.getBoolean("pref_watch_list", false) && watchList(event)) return;
+            if (mWatchList && watchList(event)) return;
             mListMutex = false;
         }
 
         if (!mChatMutex) {
             mChatMutex = true;
-            if (sharedPreferences.getBoolean("pref_watch_chat", false)) watchChat(event);
+            if (mWatchChat) watchChat(event);
             mChatMutex = false;
         }
     }
 
     private void watchChat(AccessibilityEvent event) {
-//        this.rootNodeInfo = getRootInActiveWindow();
-
-//        if (rootNodeInfo == null) return;
 
         mReceiveNode = null;
         mUnpackNode = null;
@@ -127,8 +128,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         /* 如果戳开但还未领取 */
         Log.d(TAG, "戳开红包！" + " mUnpackCount: " + mUnpackCount + " mUnpackNode: " + mUnpackNode);
         if (mUnpackCount >= 1 && (mUnpackNode != null) || canOpen()) {
-            int delayFlag = sharedPreferences.getInt("pref_open_delay", 0) * 1000;
-            if (delayFlag != 0) {
+            if (mOpenDelay != 0) {
                 getHandler().postDelayed(
                         new Runnable() {
                             public void run() {
@@ -142,7 +142,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
                                 }
                             }
                         },
-                        delayFlag);
+                        mOpenDelay * 1000L);
             } else {
                 openPacket();
             }
@@ -230,7 +230,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             } catch (PackageManager.NameNotFoundException e) {
                 int currentWindowId = getActiveWindowId(event);
                 Log.e(TAG, currentWindowId + " ", e);
-                if (!checkCurrentActivityName(currentWindowId)){
+                if (!checkCurrentActivityName(currentWindowId)) {
                     mForceCheckWindow = true;
                 }
             }
@@ -240,12 +240,12 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         }
     }
 
-    private int getActiveWindowId(AccessibilityEvent event){
+    private int getActiveWindowId(AccessibilityEvent event) {
         AccessibilityNodeInfo info = getRootInActiveWindow();
-        if (info != null){
+        if (info != null) {
             return info.getWindowId();
         }
-        if (event != null && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && event.getContentChangeTypes() == AccessibilityEvent.CONTENT_CHANGE_TYPE_PANE_APPEARED){
+        if (event != null && event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && event.getContentChangeTypes() == AccessibilityEvent.CONTENT_CHANGE_TYPE_PANE_APPEARED) {
             return event.getWindowId();
         }
         return -1;
@@ -260,7 +260,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private boolean checkCurrentActivityName(int windowId) {
-        if (windowId == -1){
+        if (windowId == -1) {
             return false;
         }
         if (windowId == mCurrentChatWindowsId) {
@@ -287,7 +287,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
 
     private boolean isLuckyMoney() {
-        if (getActiveWindowId(null) == mCurrentChatWindowsId){
+        if (getActiveWindowId(null) == mCurrentChatWindowsId) {
             return false;
         }
         return getCurrentActivityName().contains(WECHAT_LUCKMONEY_RECEIVE_ACTIVITY);
@@ -298,7 +298,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private boolean isInChatActivity(boolean checkId) {
-        if (checkId && getActiveWindowId(null) != mCurrentChatWindowsId){
+        if (checkId && getActiveWindowId(null) != mCurrentChatWindowsId) {
             return false;
         }
         String currentActivityName = getCurrentActivityName();
@@ -306,7 +306,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private boolean isGroupChat(AccessibilityNodeInfo rootNodeInfo) {
-        if (getActiveWindowId(null) != mCurrentChatWindowsId){
+        if (getActiveWindowId(null) != mCurrentChatWindowsId) {
             return false;
         }
         List<AccessibilityNodeInfo> nodeInfos = rootNodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/ipt");
@@ -330,7 +330,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private boolean isInReceiveActivity(boolean checkId) {
-        if (checkId && getActiveWindowId(null) == mCurrentChatWindowsId){
+        if (checkId && getActiveWindowId(null) == mCurrentChatWindowsId) {
             return false;
         }
         String currentActivityName = getCurrentActivityName();
@@ -342,7 +342,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private boolean isInDetailActivity(boolean checkId) {
-        if (checkId && getActiveWindowId(null) == mCurrentChatWindowsId){
+        if (checkId && getActiveWindowId(null) == mCurrentChatWindowsId) {
             return false;
         }
         String currentActivityName = getCurrentActivityName();
@@ -381,7 +381,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private AccessibilityNodeInfo findOpenButton(AccessibilityNodeInfo node) {
-        if (node == null || node.getWindowId() == mCurrentChatWindowsId || node.getWindowId() == mCurrentDetailWindowId || mRedPackOpening){
+        if (node == null || node.getWindowId() == mCurrentChatWindowsId || node.getWindowId() == mCurrentDetailWindowId || mRedPackOpening) {
             return null;
         }
 
@@ -437,8 +437,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
                 if (TextUtils.isEmpty(hongbaoContent) || hongbaoContent.contains("已被领完") || hongbaoContent.contains("已领取") || hongbaoContent.contains("已过期"))
                     return null;
             }
-            boolean self = sharedPreferences.getBoolean("pref_watch_self", false);
-            if (!self) {
+            if (!mOpenSelf) {
                 Rect bounds = new Rect();
                 hongbaoNode.getBoundsInScreen(bounds);
                 DisplayMetrics metrics = getResources().getDisplayMetrics();
@@ -501,7 +500,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             mLuckyMoneyPicked = false;
             mRedPackOpening = false;
             resetUnpackState();
-            if (mOpened && sharedPreferences.getBoolean("pref_open_after_back", false)) {
+            if (mOpened && mBackAfterOpen) {
                 mOpened = false;
                 Log.d(TAG, "back click");
                 performGlobalAction(GLOBAL_ACTION_BACK);
@@ -554,8 +553,14 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private void watchFlagsFromPreference() {
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+
+        mWatchList = sharedPreferences.getBoolean("pref_watch_list", mWatchList);
+        mWatchChat = sharedPreferences.getBoolean("pref_watch_chat", mWatchChat);
+        mOpenSelf = sharedPreferences.getBoolean("pref_watch_self", mOpenSelf);
+        mOpenDelay = sharedPreferences.getInt("pref_open_delay", 0);
+        mBackAfterOpen = sharedPreferences.getBoolean("pref_open_after_back", mBackAfterOpen);
 
         this.powerUtil = PowerUtil.getInstance(this);
         boolean watchOnLockFlag = sharedPreferences.getBoolean("pref_keep_screen_on", false);
@@ -564,21 +569,42 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if (key.equals("pref_keep_screen_on")) {
-            boolean changedValue = sharedPreferences.getBoolean(key, false);
-            this.powerUtil.handleWakeLock(changedValue);
+        switch (key) {
+            case "pref_keep_screen_on":
+                boolean changedValue = sharedPreferences.getBoolean(key, false);
+                this.powerUtil.handleWakeLock(changedValue);
+                break;
+            case "pref_watch_list":
+                mWatchList = sharedPreferences.getBoolean(key, mWatchList);
+                break;
+            case "pref_watch_chat":
+                mWatchChat = sharedPreferences.getBoolean(key, mWatchChat);
+                break;
+            case "pref_watch_self":
+                mOpenSelf = sharedPreferences.getBoolean(key, mOpenSelf);
+                break;
+            case "pref_open_delay":
+                mOpenDelay = sharedPreferences.getInt(key, 0);
+                break;
+            case "pref_open_after_back":
+                mBackAfterOpen = sharedPreferences.getBoolean(key, mBackAfterOpen);
+                break;
         }
     }
 
     @Override
     public void onInterrupt() {
         Toast.makeText(this, R.string.interrupt, Toast.LENGTH_SHORT).show();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
         this.powerUtil.handleWakeLock(false);
     }
 
     @Override
     public void onDestroy() {
         this.powerUtil.handleWakeLock(false);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
         super.onDestroy();
     }
 }

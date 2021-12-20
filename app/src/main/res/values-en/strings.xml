@@ -33,11 +33,8 @@
     <string name="help_and_feedback">Help and feedback</string>
     <string name="help_hint">Submit issues on GitHub homepage</string>
     <string name="checking_new_version">Checking for updates…</string>
-    <string name="delay_instantly">Instantly&#160;</string>
-    <string name="delay_delay">Delay for&#160;</string>
-    <string name="delay_open">open red packets.</string>
-    <string name="delay_sec">&#160;seconds&#160;</string>
-    <string name="delay_then">and then&#160;</string>
+    <string name="delay_instantly">Instantly open red packets.</string>
+    <string name="delay_delay">Delay %ds for open red packets.</string>
     <string name="d">Delay 0s open red packets</string>
     <string name="todo">TODO</string>
     <string name="interrupt">Server interrupt</string>

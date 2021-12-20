@@ -1,13 +1,11 @@
 package xyz.monkeytong.hongbao.dialogs;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import androidx.preference.DialogPreference;
-import androidx.preference.EditTextPreferenceDialogFragmentCompat;
+import androidx.annotation.NonNull;
 import androidx.preference.PreferenceDialogFragmentCompat;
 
 import xyz.monkeytong.hongbao.R;
@@ -20,11 +18,11 @@ import xyz.monkeytong.hongbao.preferences.SeekBarDialogPreference;
  */
 public class SeekBarPreferenceDialogFragmentCompat extends PreferenceDialogFragmentCompat {
 
-    private static final String SAVE_STATE_TEXT = "SeekBarPreferenceDialogFragment.progress";
+    private static final String SAVE_STATE_PROGRESS = "SeekBarPreferenceDialogFragment.progress";
 
     private SeekBar seekBar;
     private TextView textView;
-    private String hintText;
+    private int progress;
 
     public static SeekBarPreferenceDialogFragmentCompat newInstance(String key) {
         final SeekBarPreferenceDialogFragmentCompat
@@ -39,18 +37,32 @@ public class SeekBarPreferenceDialogFragmentCompat extends PreferenceDialogFragm
         return (SeekBarDialogPreference) super.getPreference();
     }
 
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState == null) {
+            progress = getSeekBarDialogPreference().getValue();
+        } else {
+            progress = savedInstanceState.getInt(SAVE_STATE_PROGRESS);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(SAVE_STATE_PROGRESS, progress);
+    }
+
     @Override
     protected void onBindDialogView(View view) {
         super.onBindDialogView(view);
-        hintText = getContext().getString(R.string.delay_open);
 
-        int delay = getSeekBarDialogPreference().getValue();
         this.seekBar = view.findViewById(R.id.delay_seekBar);
-        this.seekBar.setProgress(delay);
-
-
         this.textView = view.findViewById(R.id.pref_seekbar_textview);
-        setHintText(0);
+
+        this.seekBar.setProgress(progress);
+        setHintText(progress);
 
         this.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -72,16 +84,20 @@ public class SeekBarPreferenceDialogFragmentCompat extends PreferenceDialogFragm
 
     private void setHintText(int delay) {
         if (delay == 0) {
-            this.textView.setText(getContext().getString(R.string.delay_instantly) + hintText);
+            this.textView.setText(R.string.delay_instantly);
         } else {
-            this.textView.setText(getContext().getString(R.string.delay_delay) + delay + getContext().getString(R.string.delay_sec) + getContext().getString(R.string.delay_then) + hintText);
+            this.textView.setText(requireContext().getString(R.string.delay_delay, delay));
         }
     }
 
     @Override
     public void onDialogClosed(boolean positiveResult) {
         if (positiveResult) {
-            getSeekBarDialogPreference().setValue(seekBar.getProgress());
+            int progress = seekBar.getProgress();
+            final SeekBarDialogPreference preference = getSeekBarDialogPreference();
+            if (preference.callChangeListener(preference)) {
+                preference.setValue(progress);
+            }
         }
     }
 }
