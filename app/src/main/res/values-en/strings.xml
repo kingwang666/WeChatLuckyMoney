@@ -23,6 +23,8 @@
     <string name="watch_notifications_hint">Enter chat when a red packet is detected from WeChat notifications</string>
     <string name="watch_list">Watch chat list</string>
     <string name="watch_list_hint">Enter chat when a red packet is detected from chat list</string>
+    <string name="only_last_hint">Only watch last red pack receiver</string>
+    <string name="only_last">Only watch last</string>
     <string name="anti_block_options">Anti-block Options</string>
     <string name="auto_open_packets">Open red packets automatically</string>
     <string name="open_with_delay">Open red packets with a delay</string>
@@ -49,4 +51,5 @@
     <string name="new_version">New version (%s)</string>
     <string name="new_version_prerelease">New prerelease version (%s)</string>
     <string name="cancel">cancel</string>
+
 </resources>

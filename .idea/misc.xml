@@ -7,16 +7,8 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout-v21/activity_preferences.xml" value="0.3494791666666667" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout-v21/activity_webview.xml" value="0.3494791666666667" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout/activity_main.xml" value="0.3494791666666667" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout/activity_preferences.xml" value="0.3494791666666667" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout/activity_webview.xml" value="0.3494791666666667" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout/preference_category.xml" value="0.165625" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout/preference_checkbox.xml" value="0.165625" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/layout/preference_seekbar.xml" value="0.165625" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/xml/comment_preferences.xml" value="0.3494791666666667" />
-        <entry key="..\:/Projects/github/me/WeChatLuckyMoney/app/src/main/res/xml/general_preferences.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/preference_checkbox.xml" value="0.32395833333333335" />
+        <entry key="app/src/main/res/xml/general_preferences.xml" value="0.33" />
       </map>
     </option>
   </component>
