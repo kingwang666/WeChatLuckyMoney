@@ -10,7 +10,6 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
@@ -29,7 +28,6 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private static final String WECHAT_OPENED = "已存入零钱";
     private static final String WECHAT_BETTER_LUCK_CH = "手慢了";
     private static final String WECHAT_BETTER_LUCK_2_CH = "手慢了，红包派完了";
-    private static final String WECHAT_BETTER_LUCK_3_CH = "看看大家的手气";
     private static final String WECHAT_EXPIRES_CH = "已超过24小时";
     private static final String WECHAT_EXPIRES_2_CH = "过期";
     private static final String WECHAT_VIEW_SELF_CH = "查看红包";
@@ -44,7 +42,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private static final String WECHAT_LUCKMONEY_CHATTING_ACTIVITY = "ChattingUI";
     private String currentActivityName = WECHAT_LUCKMONEY_GENERAL_ACTIVITY;
 
-    private AccessibilityNodeInfo /*rootNodeInfo,*/ mReceiveNode, mUnpackNode;
+    private AccessibilityNodeInfo mReceiveNode, mUnpackNode;
     private boolean mLuckyMoneyPicked, mLuckyMoneyReceived;
     private int mUnpackCount = 0;
     private boolean mMutex = false, mListMutex = false, mChatMutex = false, mOpened = false;
@@ -60,6 +58,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private boolean mOpenSelf = true;
     private int mOpenDelay;
     private boolean mBackAfterOpen = true;
+    private boolean mOnlyLastNode = true;
 
     private final Pattern mGroupChat = Pattern.compile("\\(\\d+?\\)");
 
@@ -176,7 +175,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         }
         String currentActivityName = getCurrentActivityName();
         boolean hasNodes = this.hasOneOfThoseNodes(rootNodeInfo, WECHAT_OPENED,
-                WECHAT_BETTER_LUCK_CH, WECHAT_BETTER_LUCK_2_CH, WECHAT_BETTER_LUCK_3_CH,
+                WECHAT_BETTER_LUCK_CH, WECHAT_BETTER_LUCK_2_CH,
                 WECHAT_DETAILS_CH, WECHAT_DETAILS_2_CH, WECHAT_EXPIRES_CH, WECHAT_EXPIRES_2_CH);
         if (hasNodes) {
             clickBackIfNeed();
@@ -434,7 +433,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             }
             if (count > 1) {
                 hongbaoContent = hongbaoNode.getChild(1).getText().toString();
-                if (TextUtils.isEmpty(hongbaoContent) || hongbaoContent.contains("已被领完") || hongbaoContent.contains("已领取") || hongbaoContent.contains("已过期"))
+                if (TextUtils.isEmpty(hongbaoContent) || hongbaoContent.contains("已领取") || hongbaoContent.contains("已被领完") || hongbaoContent.contains("已过期"))
                     return null;
             }
             if (!mOpenSelf) {
@@ -457,13 +456,10 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         if (rootNodeInfo == null) return;
 
         /* 聊天会话窗口，遍历节点匹配“微信红包”，“领取红包”和"查看红包" */
-        AccessibilityNodeInfo nodeText;
-        if (isInChatActivity() && isGroupChat(rootNodeInfo) && (nodeText = getTheLastNode(WECHAT_VIEW_ALL_CH, WECHAT_VIEW_OTHERS_CH, WECHAT_VIEW_SELF_CH)) != null) {
-            AccessibilityNodeInfo receiveNode = getNewHongbaoNode(nodeText);
-            if (receiveNode != null) {
-                mLuckyMoneyReceived = true;
-                mReceiveNode = receiveNode;
-            }
+        AccessibilityNodeInfo receiveNode;
+        if (isInChatActivity() && isGroupChat(rootNodeInfo) && (receiveNode = getTheLastReceiveNode(WECHAT_VIEW_ALL_CH, WECHAT_VIEW_OTHERS_CH, WECHAT_VIEW_SELF_CH)) != null) {
+            mLuckyMoneyReceived = true;
+            mReceiveNode = receiveNode;
             return;
         }
 
@@ -488,14 +484,13 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     private void clickBackIfNeed() {
         AccessibilityNodeInfo rootNodeInfo = getRootInActiveWindow();
-        if (rootNodeInfo == null) return;
-        String currentActivityName = getCurrentActivityName();
+        if (rootNodeInfo == null || !(isInDetailActivity() || isInReceiveActivity())) return;
         /* 戳开红包，红包已被抢完，遍历节点匹配“红包详情”和“手慢了” */
         boolean hasNodes = hasOneOfThoseNodes(rootNodeInfo, WECHAT_OPENED,
-                WECHAT_BETTER_LUCK_CH, WECHAT_BETTER_LUCK_2_CH, WECHAT_DETAILS_CH, WECHAT_DETAILS_2_CH, WECHAT_BETTER_LUCK_3_CH,
+                WECHAT_BETTER_LUCK_CH, WECHAT_BETTER_LUCK_2_CH, WECHAT_DETAILS_CH, WECHAT_DETAILS_2_CH,
                 WECHAT_EXPIRES_CH, WECHAT_EXPIRES_2_CH);
-        Log.d(TAG, "checkNodeInfo  hasNodes:" + hasNodes + " opened: " + mOpened + " mMutex:" + mMutex + " name: " + currentActivityName);
-        if ((isInDetailActivity() || isInReceiveActivity()) && hasNodes) {
+        Log.d(TAG, "checkNodeInfo  hasNodes:" + hasNodes + " opened: " + mOpened + " mMutex:" + mMutex);
+        if (hasNodes) {
             mMutex = false;
             mLuckyMoneyPicked = false;
             mRedPackOpening = false;
@@ -520,30 +515,36 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         return false;
     }
 
-    private AccessibilityNodeInfo getTheLastNode(String... texts) {
+    private AccessibilityNodeInfo getTheLastReceiveNode(String... texts) {
         AccessibilityNodeInfo rootNodeInfo = getRootInActiveWindow();
         if (rootNodeInfo == null) {
             return null;
         }
-        int bottom = 0;
-        AccessibilityNodeInfo lastNode = null, tempNode;
+
         List<AccessibilityNodeInfo> nodes;
         for (String text : texts) {
-            if (text == null) continue;
+            if (text == null) {
+                continue;
+            }
             nodes = rootNodeInfo.findAccessibilityNodeInfosByText(text);
-
-            if (nodes != null && !nodes.isEmpty()) {
-                tempNode = nodes.get(nodes.size() - 1);
-                if (tempNode == null) return null;
-                Rect bounds = new Rect();
-                tempNode.getBoundsInScreen(bounds);
-                if (bounds.bottom > bottom) {
-                    bottom = bounds.bottom;
-                    lastNode = tempNode;
+            if (nodes == null || nodes.isEmpty()) {
+                continue;
+            }
+            if (mOnlyLastNode) {
+                return getNewHongbaoNode(nodes.get(nodes.size() - 1));
+            }
+            for (int i = nodes.size() - 1; i >= 0; i--) {
+                AccessibilityNodeInfo tempNode = nodes.get(i);
+                if (tempNode == null) {
+                    continue;
+                }
+                AccessibilityNodeInfo newHongBaoNode = getNewHongbaoNode(tempNode);
+                if (newHongBaoNode != null) {
+                    return newHongBaoNode;
                 }
             }
         }
-        return lastNode;
+        return null;
     }
 
     @Override
@@ -561,6 +562,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         mOpenSelf = sharedPreferences.getBoolean("pref_watch_self", mOpenSelf);
         mOpenDelay = sharedPreferences.getInt("pref_open_delay", 0);
         mBackAfterOpen = sharedPreferences.getBoolean("pref_open_after_back", mBackAfterOpen);
+        mOnlyLastNode = sharedPreferences.getBoolean("pref_only_last", mOnlyLastNode);
 
         this.powerUtil = PowerUtil.getInstance(this);
         boolean watchOnLockFlag = sharedPreferences.getBoolean("pref_keep_screen_on", false);
@@ -588,6 +590,9 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
                 break;
             case "pref_open_after_back":
                 mBackAfterOpen = sharedPreferences.getBoolean(key, mBackAfterOpen);
+                break;
+            case "pref_only_last":
+                mOnlyLastNode = sharedPreferences.getBoolean(key, mOnlyLastNode);
                 break;
         }
     }
