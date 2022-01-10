@@ -1,17 +1,14 @@
 package xyz.monkeytong.hongbao.services;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
@@ -19,6 +16,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import java.lang.ref.WeakReference;
 
 /**
  * Created on 2020/1/13
@@ -35,6 +34,8 @@ public class HongbaoNotificationService extends NotificationListenerService {
 
     private static boolean sConnected;
     private static HongbaoNotificationService sService;
+
+    private NotificationHandler mHandler;
 
     public static boolean isConnected() {
         return sConnected;
@@ -63,17 +64,10 @@ public class HongbaoNotificationService extends NotificationListenerService {
         }
     }
 
-    private void clickNotification(StatusBarNotification sbn) {
-        if (sbn.getNotification().contentIntent != null) {
-            try {
-                sbn.getNotification().contentIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-                Log.d(TAG, "failed to send intent for " + sbn.getKey(), e);
-            }
-        }
-        if ((sbn.getNotification().flags & Notification.FLAG_AUTO_CANCEL) != 0) {
-            cancelNotification(sbn.getKey());
-        }
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mHandler = new NotificationHandler(this);
     }
 
 
@@ -98,19 +92,18 @@ public class HongbaoNotificationService extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn, RankingMap rankingMap) {
         super.onNotificationPosted(sbn, rankingMap);
         Log.w(TAG, "onNotificationPosted: " + sbn.getKey());
-        if (PACKAGE_NAME.equals(sbn.getPackageName())) {
-            CharSequence ticker = sbn.getNotification().tickerText;
-            if (ticker != null && ticker.toString().contains(HongbaoService.WECHAT_NOTIFICATION_TIP)) {
-                clickNotification(sbn);
-            }
+        if (PACKAGE_NAME.equals(sbn.getPackageName()) && mHandler != null) {
+            mHandler.obtainMessage(sbn.getId(), sbn).sendToTarget();
         }
-
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn, RankingMap rankingMap) {
         super.onNotificationRemoved(sbn, rankingMap);
         Log.w(TAG, "onNotificationRemoved: " + sbn.getKey());
+        if (PACKAGE_NAME.equals(sbn.getPackageName()) && mHandler != null) {
+            mHandler.removeMessages(sbn.getId());
+        }
     }
 
     @Override
@@ -118,6 +111,48 @@ public class HongbaoNotificationService extends NotificationListenerService {
         super.onDestroy();
         sConnected = false;
         sService = null;
+        if (mHandler != null) {
+            mHandler.removeCallbacksAndMessages(null);
+            mHandler = null;
+        }
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_STATE_CHANGE));
+    }
+
+    private static class NotificationHandler extends Handler {
+
+        private final WeakReference<HongbaoNotificationService> mService;
+
+        public NotificationHandler(HongbaoNotificationService service) {
+            super(Looper.getMainLooper());
+            mService = new WeakReference<>(service);
+        }
+
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            HongbaoNotificationService service = mService.get();
+            if (service == null) {
+                return;
+            }
+            StatusBarNotification sbn = (StatusBarNotification) msg.obj;
+            CharSequence ticker = sbn.getNotification().tickerText;
+            if (ticker != null && ticker.toString().contains(HongbaoService.WECHAT_NOTIFICATION_TIP)) {
+                clickNotification(service, sbn);
+            }
+        }
+
+
+        private void clickNotification(HongbaoNotificationService service, StatusBarNotification sbn) {
+            if (sbn.getNotification().contentIntent != null) {
+                try {
+                    sbn.getNotification().contentIntent.send();
+                } catch (PendingIntent.CanceledException e) {
+                    Log.d(TAG, "failed to send intent for " + sbn.getKey(), e);
+                }
+            }
+            if ((sbn.getNotification().flags & Notification.FLAG_AUTO_CANCEL) != 0) {
+                service.cancelNotification(sbn.getKey());
+            }
+        }
     }
 }
