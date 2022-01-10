@@ -5,6 +5,6 @@
     android:accessibilityFlags="flagDefault"
     android:canRetrieveWindowContent="true"
     android:description="@string/app_description"
-    android:notificationTimeout="10"
+    android:notificationTimeout="100"
     android:packageNames="com.tencent.mm"
     android:settingsActivity="xyz.monkeytong.hongbao.activities.SettingsActivity" />

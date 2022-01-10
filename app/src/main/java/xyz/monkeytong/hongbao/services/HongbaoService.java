@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
@@ -105,14 +106,14 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         mReceiveNode = null;
         mUnpackNode = null;
 
-        checkNodeInfo(event.getEventType());
+        checkNodeInfo(event);
 
         /* 如果已经接收到红包并且还没有戳开 */
         Log.d(TAG, "watchChat mLuckyMoneyReceived:" + mLuckyMoneyReceived + " mLuckyMoneyPicked:" + mLuckyMoneyPicked + " mReceiveNode:" + mReceiveNode);
         if (mLuckyMoneyReceived && (mReceiveNode != null) && isInChatActivity()) {
             mMutex = true;
-            mOpened = true;
             mReceiveNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            mOpened = true;
             mLuckyMoneyReceived = false;
             mLuckyMoneyPicked = true;
             if (mUnpackNode == null) {
@@ -125,8 +126,8 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     private void openPackIfNeed() {
         /* 如果戳开但还未领取 */
-        Log.d(TAG, "戳开红包！" + " mUnpackCount: " + mUnpackCount + " mUnpackNode: " + mUnpackNode);
         if (mUnpackCount >= 1 && (mUnpackNode != null) || canOpen()) {
+            Log.d(TAG, "戳开红包！" + " mUnpackCount: " + mUnpackCount + " mUnpackNode: " + mUnpackNode);
             if (mOpenDelay != 0) {
                 getHandler().postDelayed(
                         new Runnable() {
@@ -158,9 +159,9 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private void openPacket() {
         if (mUnpackCount >= 1 && (mUnpackNode != null)) {
             Log.d(TAG, "openPacket！");
-            mOpened = true;
             mRedPackOpening = true;
             mUnpackNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            mOpened = true;
             resetUnpackState();
         }
     }
@@ -451,7 +452,8 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         }
     }
 
-    private void checkNodeInfo(final int eventType) {
+    private void checkNodeInfo(final AccessibilityEvent event) {
+        int eventType = event.getEventType();
         AccessibilityNodeInfo rootNodeInfo = getRootInActiveWindow();
         if (rootNodeInfo == null) return;
 
@@ -463,14 +465,6 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             return;
         }
 
-        /* 为了能发现 拆红包的按钮 */
-        if (isInReceiveActivity() && eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
         /* 戳开红包，红包还没抢完，遍历节点匹配“拆红包” */
         AccessibilityNodeInfo unpackNode;
         if (isInReceiveActivity() && (unpackNode = findOpenButton(rootNodeInfo)) != null && (mUnpackNode == null || !mUnpackNode.equals(unpackNode))) {
