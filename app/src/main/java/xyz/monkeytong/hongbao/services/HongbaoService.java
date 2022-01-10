@@ -118,6 +118,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         }
         if (mLuckyMoneyReceived && (mReceiveNode != null) && isInChatActivity()) {
             mMutex = true;
+            mRedPackOpening = false;
             mReceiveNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             mOpened = true;
             mLuckyMoneyReceived = false;
