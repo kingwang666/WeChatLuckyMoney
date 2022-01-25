@@ -1,5 +1,10 @@
 # 更新日志
 
+**[v8.0.2.11 (2022.01.27)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.2.11)**
+
+- 新年快乐！
+- tested
+
 **[v4.0 (2017.01.27)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v4.0)**
 
 - 新年快乐！

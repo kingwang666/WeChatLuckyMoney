@@ -12,27 +12,31 @@ android {
     }
 
     signingConfigs {
-//        release {
-//            keyAlias 'key'
-//            keyPassword 'wxj19931028'
-//            storeFile file('D:/project/demo/key.jks')
-//            storePassword 'wxj19931028'
-//        }
+        release {
+            keyAlias 'WeChatLuckyMoney'
+            keyPassword 'WeChatLuckyMoney'
+            storeFile file('../WeChatLuckyMoney.jks')
+            storePassword 'WeChatLuckyMoney'
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-//            signingConfig signingConfigs.release
+            signingConfig signingConfigs.release
         }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 
  dependencies {
      implementation fileTree(include: ['*.jar'], dir: 'libs')
-     implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.0.0"
-     implementation 'androidx.appcompat:appcompat:1.4.0'
+     implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.1.0"
+     implementation 'androidx.appcompat:appcompat:1.4.1'
      implementation 'androidx.preference:preference:1.1.1'
      implementation("com.squareup.okhttp3:okhttp:4.9.3")
  }
