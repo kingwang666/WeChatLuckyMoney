@@ -78,10 +78,17 @@ public class UpdateTask extends AsyncTask<String, String, UpdateTask.ReleaseApp>
                     }
                     JSONArray assets;
                     if (!release.isNull("assets") && (assets = release.getJSONArray("assets")).length() > 0) {
-                        JSONObject asset = assets.getJSONObject(0);
-                        if (asset != null && !asset.isNull("browser_download_url")) {
-                            app.downloadUrl = asset.getString("browser_download_url");
+                        for (int i = 0; i < assets.length(); i++) {
+                            JSONObject asset = assets.getJSONObject(i);
+                            if (asset == null || asset.isNull("name") || !asset.getString("name").endsWith(".apk")) {
+                                continue;
+                            }
+                            if (!asset.isNull("browser_download_url")) {
+                                app.downloadUrl = asset.getString("browser_download_url");
+                                break;
+                            }
                         }
+
                     }
                     return app;
                 }
@@ -119,12 +126,13 @@ public class UpdateTask extends AsyncTask<String, String, UpdateTask.ReleaseApp>
                 return;
             }
             new AlertDialog.Builder(context)
-                    .setTitle(context.getString(app.isPreRelease ? R.string.new_version : R.string.new_version_prerelease, app.latestVersion))
+                    .setTitle(context.getString(!app.isPreRelease ? R.string.new_version : R.string.new_version_prerelease, app.latestVersion))
                     .setMessage(app.body)
                     .setPositiveButton(R.string.update, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(app.downloadUrl));
+                            String url = TextUtils.isEmpty(app.downloadUrl) ? "https://github.com/kingwang666/WeChatLuckyMoney/releases" : app.downloadUrl;
+                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                             browserIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             context.startActivity(browserIntent);
                         }

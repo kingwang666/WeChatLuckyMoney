@@ -1,9 +1,24 @@
 # 更新日志
 
-**[v8.0.2.11 (2022.01.27)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.2.11)**
+**[v8.0.3 (2022.01.25)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.3)**
 
 - 新年快乐！
-- tested
+- 优化自动返回逻辑
+- 修复更新下载的是mapping文件问题
+
+**[v8.0.2 (2022.01.11)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.2)**
+
+- 修复无法自动返回BUG
+- 减少卡顿
+- Release去除日志
+- 修复其他若干BUG
+
+**[v8.0.1 (2021.12.23)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.1)**
+
+- 支持最新版本微信
+- 支持android11
+- 去除无用设置
+- 增加是否只抢最新的红包
 
 **[v4.0 (2017.01.27)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v4.0)**
 
