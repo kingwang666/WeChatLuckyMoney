@@ -2,7 +2,6 @@ name: Android CI
 
 on:
   push:
-    branches: [ wxj ]
     tags:
      - 'v*'
   pull_request:
@@ -46,19 +45,8 @@ jobs:
       with:
         script: |
           const str=process.env.GITHUB_REF;
-          return str.substring(str.indexOf("v") + 1);
+          return str.substring(str.indexOf("v")+1);
         result-encoding: string
-        
-    - name: Upload Release mapping Asset
-      id: upload-release-mapping-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: app/build/outputs/mapping/release/mapping.txt # 上传路径
-        asset_name: mapping-${{steps.get-version.outputs.result}}.txt # 资源名
-        asset_content_type: text/plain #资源类型
         
     - name: Upload Release apk Asset
       id: upload-release-apk-asset
@@ -70,6 +58,17 @@ jobs:
         asset_path: app/build/outputs/apk/release/app-release.apk # 上传路径
         asset_name: WeChatLuckyMoney-${{steps.get-version.outputs.result}}.apk # 资源名
         asset_content_type: application/vnd.android.package-archive #资源类型
+        
+    - name: Upload Release mapping Asset
+      id: upload-release-mapping-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: app/build/outputs/mapping/release/mapping.txt # 上传路径
+        asset_name: mapping-${{steps.get-version.outputs.result}}.txt # 资源名
+        asset_content_type: text/plain #资源类型
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.3.1
