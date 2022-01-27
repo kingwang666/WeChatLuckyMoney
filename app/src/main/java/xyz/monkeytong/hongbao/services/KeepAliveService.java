@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
@@ -31,13 +32,16 @@ public class KeepAliveService extends Service {
             createNotificationChannel();
         }
         Intent launch = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("红包助手")
-                .setContentText("红包助手已启动")
-                .setContentIntent(PendingIntent.getActivity(this, 100, launch, PendingIntent.FLAG_UPDATE_CURRENT))
-                .build();
-        startForeground(SERVICE_ID, notification);
+                .setContentText("红包助手已启动");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setContentIntent(PendingIntent.getActivity(this, 100, launch, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE));
+        } else {
+            builder.setContentIntent(PendingIntent.getActivity(this, 100, launch, PendingIntent.FLAG_UPDATE_CURRENT));
+        }
+        startForeground(SERVICE_ID, builder.build());
     }
 
 
