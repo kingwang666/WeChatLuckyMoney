@@ -1,5 +1,11 @@
 # 更新日志
 
+**[v8.0.5 (2022.01.27)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.5)**
+
+- 新年快乐！
+- 修复Android启动服务奔溃
+- 增加去除专属红包设置，默认为去除
+
 **[v8.0.3 (2022.01.25)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.3)**
 
 - 新年快乐！
