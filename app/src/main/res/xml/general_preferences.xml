@@ -15,6 +15,13 @@
 
         <CheckBoxPreference
             android:defaultValue="true"
+            android:key="pref_exclude_exclusive"
+            android:layout="@layout/preference_checkbox"
+            android:summary="@string/exclude_exclusive_hint"
+            android:title="@string/exclude_exclusive" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
             android:key="pref_only_last"
             android:layout="@layout/preference_checkbox"
             android:summary="@string/only_last_hint"

@@ -61,6 +61,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private int mOpenDelay;
     private boolean mBackAfterOpen = true;
     private boolean mOnlyLastNode = true;
+    private boolean mExcludeExclusive = true;
 
     private final Pattern mGroupChat = Pattern.compile("\\(\\d+?\\)");
 
@@ -461,8 +462,8 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
                 return null;
             }
             if (count > 1) {
-                hongbaoContent = hongbaoNode.getChild(1).getText().toString();
-                if (TextUtils.isEmpty(hongbaoContent) || hongbaoContent.contains("已领取") || hongbaoContent.contains("已被领完") || hongbaoContent.contains("已过期"))
+                hongbaoContent = hongbaoNode.getChild(1).getText().toString(); //专属红包也是这个content
+                if (TextUtils.isEmpty(hongbaoContent) || hongbaoContent.contains("已领取") || hongbaoContent.contains("已被领完") || hongbaoContent.contains("已过期") || (mExcludeExclusive && hongbaoContent.endsWith("的专属红包")))
                     return null;
             }
             if (!mOpenSelf) {
@@ -593,6 +594,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         mOpenDelay = sharedPreferences.getInt("pref_open_delay", 0);
         mBackAfterOpen = sharedPreferences.getBoolean("pref_open_after_back", mBackAfterOpen);
         mOnlyLastNode = sharedPreferences.getBoolean("pref_only_last", mOnlyLastNode);
+        mExcludeExclusive = sharedPreferences.getBoolean("pref_exclude_exclusive", mExcludeExclusive);
 
         this.powerUtil = PowerUtil.getInstance(this);
         boolean watchOnLockFlag = sharedPreferences.getBoolean("pref_keep_screen_on", false);
@@ -623,6 +625,9 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
                 break;
             case "pref_only_last":
                 mOnlyLastNode = sharedPreferences.getBoolean(key, mOnlyLastNode);
+                break;
+            case "pref_exclude_exclusive":
+                mExcludeExclusive = sharedPreferences.getBoolean(key, mExcludeExclusive);
                 break;
         }
     }
