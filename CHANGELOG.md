@@ -1,5 +1,11 @@
 # 更新日志
 
+**[v8.0.6 (2022.01.31)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.6)**
+
+- 新年快乐！
+- 无法自动返回bug
+- 修复无法识别群聊bug
+
 **[v8.0.5 (2022.01.27)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.5)**
 
 - 新年快乐！
@@ -81,7 +87,7 @@
 
 
 
-**[v2.0 (2016.01.23)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v2.0)** 
+**[v2.0 (2016.01.23)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v2.0)**
 
 - 更自由的监视选项. Give user the freedom to choose what to watch, chat/list/notifications available at choices.
 
@@ -100,18 +106,18 @@
 详细的release notes请见https://github.com/geeeeeeeeek/WeChatLuckyMoney/issues/48。
 
 
-**[v1.4 (2016.01.16)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v1.4)** 
+**[v1.4 (2016.01.16)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v1.4)**
 
 - 修复了微信新版(6.3.9.48_refecd3e)红包UI调整导致的功能失效。Fix failure caused by new WeChat Hongbao UI. Related issue #41.
 
 
-**[v1.3 (2015.12.29)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v1.3)** 
+**[v1.3 (2015.12.29)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v1.3)**
 
 - 修复了红包频繁点击的bug。Fix repeatedly opening envelopes. Related issue #27 .
 
 - 并入了从通知栏进入抢红包的代码(#28)，充分测试后加入下一个版本。Add watch for WeChat notification, from which enter the chat activity. This feature will not be available in this version, until well tested.
 
-**[v1.2 (2015.12.17)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v1.2)** 
+**[v1.2 (2015.12.17)](https://github.com/geeeeeeeeek/WeChatLuckyMoney/releases/tag/v1.2)**
 
 该版本的红包识别代码存在Bug，会出现频繁点击，建议跳过该版本。
 

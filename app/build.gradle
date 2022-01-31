@@ -7,11 +7,19 @@ android {
         applicationId "xyz.monkeytong.hongbao"
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 8000005
-        versionName "v8.0.5"
+        versionCode 8000006
+        versionName "v8.0.6"
     }
 
     signingConfigs {
+
+        debug {
+            keyAlias 'WeChatLuckyMoney'
+            keyPassword 'WeChatLuckyMoney'
+            storeFile file('../WeChatLuckyMoney.jks')
+            storePassword 'WeChatLuckyMoney'
+        }
+
         release {
             keyAlias 'WeChatLuckyMoney'
             keyPassword 'WeChatLuckyMoney'
@@ -21,6 +29,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

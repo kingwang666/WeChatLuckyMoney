@@ -27,7 +27,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     private static final String WECHAT_DETAILS_CH = "红包详情";
     private static final String WECHAT_DETAILS_2_CH = "红包记录";
-    private static final String WECHAT_OPENED = "已存入零钱";
+    private static final String WECHAT_OPENED = "存入零钱";
     private static final String WECHAT_BETTER_LUCK_CH = "手慢了";
     private static final String WECHAT_BETTER_LUCK_2_CH = "手慢了，红包派完了";
     private static final String WECHAT_EXPIRES_CH = "已超过24小时";
@@ -331,7 +331,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         if ((id = getActiveWindowId(null)) != -1 && id != mCurrentChatWindowsId) {
             return false;
         }
-        List<AccessibilityNodeInfo> nodeInfos = rootNodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/ipt");
+        List<AccessibilityNodeInfo> nodeInfos = rootNodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/koe");
         if (nodeInfos == null || nodeInfos.isEmpty()) {
             return true;
         }
