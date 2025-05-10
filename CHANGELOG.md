@@ -1,5 +1,9 @@
 # 更新日志
 
+**[v8.1.0 (2025.05.10)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.6)**
+
+- 支持最新版本微信8.0.58
+
 **[v8.0.6 (2022.01.31)](https://github.com/kingwang666/WeChatLuckyMoney/releases/tag/v8.0.6)**
 
 - 新年快乐！
