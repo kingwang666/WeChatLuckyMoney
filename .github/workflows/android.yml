@@ -71,6 +71,6 @@ jobs:
         asset_content_type: text/plain #资源类型
 
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.3.1
+      uses: actions/upload-artifact@v4
       with:
         path: app/build/outputs
