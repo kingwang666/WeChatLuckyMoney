@@ -64,8 +64,14 @@
         <Preference
             android:key="pref_add_white"
             android:layout="@layout/preference_checkbox"
-            android:summary="将此应用加入白名单防止进程被杀"
-            android:title="白名单" />
+            android:summary="@string/white_list_hint"
+            android:title="@string/white_list" />
+
+        <Preference
+            android:key="pref_battery"
+            android:layout="@layout/preference_checkbox"
+            android:summary="@string/battery_optimization_hint"
+            android:title="@string/battery_optimization" />
 
         <Preference
             android:key="pref_etc_check_update"

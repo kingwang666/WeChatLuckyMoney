@@ -9,6 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#E46C62"
+        android:fitsSystemWindows="true"
         tools:context=".SettingsActivity">
 
         <TextView
@@ -47,7 +48,7 @@
             android:clickable="true"
             android:contentDescription="@string/todo"
             android:focusable="true"
-            android:onClick="enterAccessibilityPage"
+            android:onClick="gotoAccessibilityPage"
             android:padding="8dp"
             android:src="@mipmap/ic_refresh" />
     </RelativeLayout>

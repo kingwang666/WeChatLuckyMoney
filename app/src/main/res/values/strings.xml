@@ -53,5 +53,18 @@
     <string name="new_version">新版本(%s)</string>
     <string name="new_version_prerelease">新预发版本(%s)</string>
     <string name="cancel">取消</string>
+    <string name="confirm">确认</string>
+    <string name="pause">服务已暂停</string>
+    <string name="resume">服务已恢复运行</string>
+    <string name="white_list_hint">将此应用加入白名单防止进程被杀</string>
+    <string name="white_list">白名单</string>
+    <string name="battery_optimization_hint">将此电池优化关闭防止进程被杀</string>
+    <string name="battery_optimization">电池优化</string>
+    <string name="battery_optimization_message">当前开启了电池优化，是否关闭？</string>
+    <string name="notification_permission">通知权限</string>
+    <string name="notification_permission_message">未获取到通知权限。是否给予权限？</string>
+    <string name="warrning_notication_running">通知服务会一直运行。只能手动关闭！！！</string>
+    <string name="warrning_notication_pause">暂停功能只支持Android7.0及以上</string>
+    <string name="error_notication_running">通知监听服务运行中，请关闭</string>
 
 </resources>

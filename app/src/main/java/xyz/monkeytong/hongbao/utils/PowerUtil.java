@@ -10,7 +10,7 @@ import android.os.PowerManager;
  */
 public class PowerUtil {
 
-    private static final int WAKE_LOCK_LEVEL = PowerManager.SCREEN_DIM_WAKE_LOCK;
+    private static final int WAKE_LOCK_LEVEL = PowerManager.FULL_WAKE_LOCK;
 
     private static volatile PowerUtil sInstance;
 

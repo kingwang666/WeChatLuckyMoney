@@ -4,12 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.preference.Preference;
-import androidx.preference.PreferenceFragmentCompat;
 
 import android.view.View;
 import android.widget.TextView;
@@ -50,7 +47,7 @@ public class SettingsActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
-    public void enterAccessibilityPage(View view) {
+    public void gotoAccessibilityPage(View view) {
         Toast.makeText(this, getString(R.string.turn_on_toast), Toast.LENGTH_SHORT).show();
         Intent mAccessibleIntent =
                 new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);

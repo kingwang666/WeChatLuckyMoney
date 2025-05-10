@@ -3,7 +3,6 @@ package xyz.monkeytong.hongbao.fragments;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.fragment.app.Fragment;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
@@ -29,7 +28,16 @@ public class GeneralSettingsFragment extends PreferenceFragmentCompat {
         whitePref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                SettingUtils.enterWhiteListSetting(getActivity());
+                SettingUtils.gotoWhiteListSetting(getActivity());
+                return false;
+            }
+        });
+
+        Preference batteryPref = findPreference("pref_battery");
+        batteryPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                SettingUtils.gotoBatteryOptimizationSettings(getActivity());
                 return false;
             }
         });

@@ -19,6 +19,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.lang.ref.WeakReference;
 
+import xyz.monkeytong.hongbao.compat.Wechat;
+
 /**
  * Created on 2020/1/13
  * Author: bigwang
@@ -45,14 +47,12 @@ public class HongbaoNotificationService extends NotificationListenerService {
     public static void toggleSnooze(Context context) {
         if (sConnected) {
             Log.d(TAG, "trying to snooze");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                try {
-                    if (sService != null) {
-                        sService.requestUnbind();
-                    }
-                } catch (RuntimeException e) {
-                    Log.e(TAG, "failed to unbind service", e);
+            try {
+                if (sService != null) {
+                    sService.requestUnbind();
                 }
+            } catch (RuntimeException e) {
+                Log.e(TAG, "failed to unbind service", e);
             }
         } else {
             Log.d(TAG, "trying to unsnooze");
@@ -136,7 +136,7 @@ public class HongbaoNotificationService extends NotificationListenerService {
             }
             StatusBarNotification sbn = (StatusBarNotification) msg.obj;
             CharSequence ticker = sbn.getNotification().tickerText;
-            if (ticker != null && ticker.toString().contains(HongbaoService.WECHAT_NOTIFICATION_TIP)) {
+            if (ticker != null && ticker.toString().contains(Wechat.WECHAT_NOTIFICATION_TIP)) {
                 clickNotification(service, sbn);
             }
         }

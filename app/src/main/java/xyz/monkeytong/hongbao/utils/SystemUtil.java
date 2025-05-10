@@ -19,9 +19,12 @@ import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static android.content.pm.PackageManager.GET_SERVICES;
+
+import kotlinx.coroutines.internal.SystemPropsKt;
 
 /**
  * Created on 2016/10/19.
@@ -246,5 +249,75 @@ public class SystemUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * 是否为鸿蒙系统
+     */
+    public static boolean isHarmonyOs() {
+        try {
+            Class<?> buildExClass = Class.forName("com.huawei.system.BuildEx");
+            Object osBrand = buildExClass.getMethod("getOsBrand").invoke(null);
+            if (osBrand == null) {
+                return false;
+            }
+            return "harmony".equalsIgnoreCase(osBrand.toString());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 获取鸿蒙系统版本号
+     */
+    public static String getHarmonyOsVersion() {
+        try {
+            Class<?> buildExClass = Class.forName("com.huawei.system.BuildEx");
+            Object osVersion = buildExClass.getMethod("getDisplayVersion").invoke(null);
+            if (osVersion == null){
+                return "";
+            }
+            return osVersion.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 获取鸿蒙系统版本号
+     *
+     * @return 版本号
+     */
+    public static String getHarmonyVersion() {
+        return getProp("hw_sc.build.platform.version", "");
+    }
+
+    /**
+     * 获取属性
+     * @param property
+     * @param defaultValue
+     * @return
+     */
+    private static String getProp(String property, String defaultValue) {
+        try {
+            Class<?> spClz = Class.forName("android.os.SystemProperties");
+            Method method = spClz.getDeclaredMethod("get", String.class);
+            String value = (String) method.invoke(spClz, property);
+            if (TextUtils.isEmpty(value)) {
+                return defaultValue;
+            }
+            return value;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * 获得鸿蒙系统版本号（含小版本号，实际上同Android的android.os.Build.DISPLAY）
+     * @return 版本号
+     */
+    public static String getHarmonyDisplayVersion() {
+        return android.os.Build.DISPLAY;
     }
 }

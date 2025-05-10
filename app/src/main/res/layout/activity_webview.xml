@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#E46C62"
+        android:fitsSystemWindows="true"
         tools:context=".WebViewActivity">
 
         <TextView

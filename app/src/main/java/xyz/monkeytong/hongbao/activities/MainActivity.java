@@ -4,11 +4,9 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -18,9 +16,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.preference.PreferenceManager;
 
@@ -30,7 +28,6 @@ import xyz.monkeytong.hongbao.BuildConfig;
 import xyz.monkeytong.hongbao.HBApplication;
 import xyz.monkeytong.hongbao.R;
 import xyz.monkeytong.hongbao.services.HongbaoNotificationService;
-import xyz.monkeytong.hongbao.services.KeepAliveService;
 import xyz.monkeytong.hongbao.utils.ConnectivityUtil;
 import xyz.monkeytong.hongbao.utils.UpdateTask;
 
@@ -53,6 +50,8 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
 
     private UpdateTask mUpdateTask;
 
+    private AccessibilityServicesStateChangeListenerCompat mAccessibilityServicesStateChangeListener;
+
     private final BroadcastReceiver mStateListener = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -65,7 +64,6 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         pluginStatusText = findViewById(R.id.layout_control_accessibility_text);
         pluginStatusIcon = findViewById(R.id.layout_control_accessibility_icon);
 
@@ -76,14 +74,18 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
         notifitionSnoozeText = findViewById(R.id.layout_snooze_notification_text);
         notifitionSnoozeIcon = findViewById(R.id.layout_snooze_notification_icon);
 
-        ((TextView)findViewById(R.id.version_tv)).setText(BuildConfig.VERSION_NAME);
+        ((TextView) findViewById(R.id.version_tv)).setText(BuildConfig.VERSION_NAME);
 
         explicitlyLoadPreferences();
 
         //监听AccessibilityService 变化
         accessibilityManager = (AccessibilityManager) getSystemService(Context.ACCESSIBILITY_SERVICE);
-        accessibilityManager.addAccessibilityStateChangeListener(this);
-        updateHongbaoServiceStatus();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            mAccessibilityServicesStateChangeListener = new AccessibilityServicesStateChangeListenerCompat();
+            mAccessibilityServicesStateChangeListener.bind(accessibilityManager);
+        } else {
+            accessibilityManager.addAccessibilityStateChangeListener(this);
+        }
         if (mReceiver == null) {
             mReceiver = new OnePixelReceiver();
             IntentFilter filter = new IntentFilter();
@@ -95,50 +97,13 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
         pluginStatusText.postDelayed(new Runnable() {
             @Override
             public void run() {
-                NotificationManagerCompat manager = NotificationManagerCompat.from(MainActivity.this);
-                if (!manager.areNotificationsEnabled()) {
-                    new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("通知")
-                            .setMessage("未获取到通知权限。是否给予权限？")
-                            .setNegativeButton("否", null)
-                            .setPositiveButton("是", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    setNotificationEnabled();
-                                }
-                            })
-                            .show();
-                }
+                MainActivityPermissionsDispatcher.checkPostNotification(MainActivity.this);
+                MainActivityPermissionsDispatcher.checkBatteryOptimizations(MainActivity.this);
             }
         }, 500);
     }
 
-    private void setNotificationEnabled() {
-        try {
-            // 根据isOpened结果，判断是否需要提醒用户跳转AppInfo页面，去打开App通知权限
-            Intent intent = new Intent();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                intent.setAction(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
-                //这种方案适用于 API 26, 即8.0（含8.0）以上可以用
-                intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
-                intent.putExtra(Settings.EXTRA_CHANNEL_ID, getApplicationInfo().uid);
-            } else {
-                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-                //这种方案适用于 API21——25，即 5.0——7.1 之间的版本可以使用
-                intent.putExtra("app_package", getPackageName());
-                intent.putExtra("app_uid", getApplicationInfo().uid);
-            }
-            startActivity(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
 
-            Intent intent = new Intent();
-            intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-            Uri uri = Uri.fromParts("package", getPackageName(), null);
-            intent.setData(uri);
-            startActivity(intent);
-        }
-    }
 
     private void explicitlyLoadPreferences() {
         PreferenceManager.setDefaultValues(this, R.xml.general_preferences, false);
@@ -168,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
     public void onBackPressed() {
         String listeners = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
         if (listeners != null && listeners.contains(HBApplication.LISTENER_PATH)) {
-            Toast.makeText(this, "通知服务会一直运行。只能手动关闭！！！", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.warrning_notication_running, Toast.LENGTH_SHORT).show();
         }
         if (!moveTaskToBack(false)) {
             super.onBackPressed();
@@ -184,7 +149,6 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
             Toast.makeText(this, getString(R.string.turn_on_error_toast), Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
-
     }
 
 
@@ -200,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
             ComponentName notificationService = new ComponentName(this, HongbaoNotificationService.class);
             PackageManager pm = getPackageManager();
             if (HongbaoNotificationService.isConnected()) {
-                Toast.makeText(this, "暂停功能只支持Android7.0及以上", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.warrning_notication_pause, Toast.LENGTH_SHORT).show();
             } else {
                 pm.setComponentEnabledSetting(notificationService, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
                 pm.setComponentEnabledSetting(notificationService, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
@@ -233,17 +197,9 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
      */
     private void updateHongbaoServiceStatus() {
         if (isServiceEnabled()) {
-            Intent service = new Intent(this, KeepAliveService.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(service);
-            } else {
-                startService(service);
-            }
             pluginStatusText.setText(R.string.service_off);
             pluginStatusIcon.setBackgroundResource(R.mipmap.ic_stop);
         } else {
-            Intent service = new Intent(this, KeepAliveService.class);
-            stopService(service);
             pluginStatusText.setText(R.string.service_on);
             pluginStatusIcon.setBackgroundResource(R.mipmap.ic_start);
         }
@@ -289,6 +245,12 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        MainActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
+    }
+
+    @Override
     protected void onStop() {
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.unregisterReceiver(mStateListener);
@@ -299,15 +261,21 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
     protected void onDestroy() {
         String listeners = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
         if (listeners != null && listeners.contains(HBApplication.LISTENER_PATH)) {
-            Toast.makeText(this, "通知监听服务运行中，请关闭", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_notication_running, Toast.LENGTH_SHORT).show();
         }
         //移除监听服务
-        accessibilityManager.removeAccessibilityStateChangeListener(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (mAccessibilityServicesStateChangeListener != null) {
+                mAccessibilityServicesStateChangeListener.unbind(accessibilityManager);
+            }
+        } else {
+            accessibilityManager.removeAccessibilityStateChangeListener(this);
+        }
         if (mReceiver != null) {
             unregisterReceiver(mReceiver);
             mReceiver = null;
         }
-        if (mUpdateTask != null){
+        if (mUpdateTask != null) {
             mUpdateTask.cancel(true);
             mUpdateTask = null;
         }
@@ -327,6 +295,26 @@ public class MainActivity extends AppCompatActivity implements AccessibilityMana
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {   //屏幕打开 结束1像素
                 LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(OnePixelActivity.ACTION_FINISH));
             }
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    private class AccessibilityServicesStateChangeListenerCompat {
+
+        private final AccessibilityManager.AccessibilityServicesStateChangeListener mListener = new AccessibilityManager.AccessibilityServicesStateChangeListener() {
+
+            @Override
+            public void onAccessibilityServicesStateChanged(AccessibilityManager manager) {
+                updateHongbaoServiceStatus();
+            }
+        };
+
+        public void bind(AccessibilityManager manager) {
+            manager.addAccessibilityServicesStateChangeListener(mListener);
+        }
+
+        public void unbind(AccessibilityManager manager) {
+            manager.removeAccessibilityServicesStateChangeListener(mListener);
         }
     }
 }
