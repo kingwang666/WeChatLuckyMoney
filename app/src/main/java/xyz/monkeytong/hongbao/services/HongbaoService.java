@@ -45,6 +45,8 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     private Wechat mWechat;
     private String mCurrentActivityName;
+    private int mCurrentWindowId;
+    private int mCurrentChatWindowId;
 
     private boolean mMutex = false;
     private boolean mListMutex = false;
@@ -70,6 +72,8 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         super.onCreate();
         mWechat = WechatCompat.getWechat(this);
         mCurrentActivityName = mWechat.getGeneralActivityName();
+        mCurrentWindowId = 0;
+        mCurrentChatWindowId = 0;
     }
 
     /**
@@ -158,19 +162,21 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private void findReceiveNodeAndClick() {
+        findReceiveNodeAndClick(false);
+    }
+
+    private void findReceiveNodeAndClick(boolean forceSendMessage) {
         if (!isInChatActivity()) {
             return;
         }
         AccessibilityNodeInfo receiveNode = findReceiveNodeInfo();
         if (BuildConfig.DEBUG) {
-            Log.i(TAG, "watchChat find receive node:" + receiveNode);
+            Log.d(TAG, "watchChat find receive node:" + receiveNode);
         }
         /* 如果已经接收到红包并且还没有戳开 */
         if (receiveNode != null) {
             boolean refreshResult = receiveNode.refresh();
-            if (BuildConfig.DEBUG) {
-                Log.w(TAG, "receive node refresh: " + refreshResult);
-            }
+            Log.w(TAG, "receive node refresh: " + refreshResult);
             if (!refreshResult) {
                 return;
             }
@@ -179,9 +185,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
             boolean result = receiveNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
             mOpened = result;
-            if (BuildConfig.DEBUG) {
-                Log.w(TAG, "receive opened: " + mOpened);
-            }
+            Log.w(TAG, "receive opened: " + mOpened);
             long delay;
             if (result) {
                 delay = DELAY_MAJOR_TIME;
@@ -192,6 +196,12 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             //做检测 防止点击无效
             if (!handler.hasMessages(WHAT_FIND_RECEIVED_NODE)) {
                 handler.sendMessageDelayed(handler.obtainMessage(WHAT_FIND_RECEIVED_NODE), delay);
+            }
+        } else if (forceSendMessage) {
+            Handler handler = getHandler();
+            //做检测 防止点击无效
+            if (!handler.hasMessages(WHAT_FIND_RECEIVED_NODE)) {
+                handler.sendMessageDelayed(handler.obtainMessage(WHAT_FIND_RECEIVED_NODE), DELAY_MAJOR_TIME);
             }
         }
     }
@@ -214,7 +224,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     private void openPacketWithDelay(@NonNull AccessibilityNodeInfo openNode, boolean shouldDelay) {
         /* 如果戳开但还未领取 */
         if (BuildConfig.DEBUG) {
-            Log.i(TAG, "戳开红包！" + openNode);
+            Log.d(TAG, "戳开红包！" + openNode);
         }
         if (mOpenDelay != 0 && shouldDelay) {
             getHandler().postDelayed(
@@ -244,9 +254,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
 
     private void openPacket(@NonNull AccessibilityNodeInfo openNode) {
         boolean result = openNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        if (BuildConfig.DEBUG) {
-            Log.w(TAG, "openPacket！" + result);
-        }
+        Log.w(TAG, "openPacket！" + result);
         long delay;
         if (result) {
             mRedPackOpening = true;
@@ -282,9 +290,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         /* 戳开红包，红包还没抢完，遍历节点匹配“拆红包” */
         AccessibilityNodeInfo openNode = findOpenButton(rootNodeInfo);
         if (openNode != null && openNode.refresh()) {
-            if (BuildConfig.DEBUG) {
-                Log.i(TAG, "find open node:" + openNode);
-            }
+            Log.i(TAG, "find open node:" + openNode);
             getHandler().removeMessages(WHAT_FIND_OPEN_NODE);
             openPacketWithDelay(openNode, shouldDelay);
         } else {
@@ -306,12 +312,15 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
                 );
                 getPackageManager().getActivityInfo(componentName, 0);
                 mCurrentActivityName = componentName.flattenToShortString();
+                mCurrentWindowId = event.getWindowId();
+                if (isInChatActivity(false)) {
+                    mCurrentChatWindowId = mCurrentWindowId;
+                }
+                Log.i(TAG, "currentActivity: " + mCurrentActivityName + ", currentWindowId: " + mCurrentWindowId);
             } catch (PackageManager.NameNotFoundException e) {
                 //ignore
             }
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "CurrentActivity: " + mCurrentActivityName);
-            }
+
         }
     }
 
@@ -325,7 +334,21 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
     }
 
     private boolean isInChatActivity() {
-        return mWechat.isChatActivity(getCurrentActivityName());
+        return isInChatActivity(true);
+    }
+
+    private boolean isInChatActivity(boolean checkWindowId) {
+        AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
+        if (checkWindowId) {
+            if (nodeInfo != null && mCurrentChatWindowId != 0 && mCurrentChatWindowId == nodeInfo.getWindowId()) {
+                return true;
+            }
+        }
+        boolean result = mWechat.isChatActivity(getCurrentActivityName());
+        if (checkWindowId && !result && nodeInfo != null && mCurrentWindowId != 0 && mCurrentWindowId != nodeInfo.getWindowId()) {
+            return true;
+        }
+        return result;
     }
 
     private boolean isGroupChat(AccessibilityNodeInfo rootNodeInfo) {
@@ -377,9 +400,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
             resetUnpackState();
             if (mOpened && mBackAfterOpen) {
                 mOpened = false;
-                if (BuildConfig.DEBUG) {
-                    Log.w(TAG, "back click");
-                }
+                Log.w(TAG, "back click");
                 performGlobalAction(GLOBAL_ACTION_BACK);
             }
         }
@@ -397,6 +418,8 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         mOpened = false;
         mRedPackOpening = false;
         mCurrentActivityName = mWechat.getGeneralActivityName();
+        mCurrentWindowId = 0;
+        mCurrentChatWindowId = 0;
 
         Intent service = new Intent(this, KeepAliveService.class);
         service.putExtra(HongbaoBroadcastReceiver.EXTRA_STATUS, mIsPaused);
@@ -522,7 +545,7 @@ public class HongbaoService extends AccessibilityService implements SharedPrefer
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
             if (msg.what == WHAT_FIND_RECEIVED_NODE) {
-                findReceiveNodeAndClick();
+                findReceiveNodeAndClick(true);
             } else if (msg.what == WHAT_FIND_OPEN_NODE) {
                 boolean shouldDelay = false;
                 if (msg.obj instanceof Boolean) {
